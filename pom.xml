@@ -66,27 +66,32 @@
       <groupId>io.opentracing</groupId>
       <artifactId>opentracing-api</artifactId>
       <version>${opentracing.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.opentracing</groupId>
       <artifactId>opentracing-noop</artifactId>
       <version>${opentracing.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.opentracing</groupId>
       <artifactId>opentracing-util</artifactId>
       <version>${opentracing.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.opentracing.contrib</groupId>
       <artifactId>opentracing-tracerresolver</artifactId>
       <version>${tracerresolver.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.auto.service</groupId>
       <artifactId>auto-service</artifactId>
       <version>1.0-rc4</version>
       <optional>true</optional>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -134,6 +139,51 @@
     </pluginManagement>
 
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.2.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <relocations>
+                <relocation>
+                  <pattern>org.komamitsu</pattern>
+                  <shadedPattern>org.shaded.komamitsu</shadedPattern>
+                  <includes>
+                    <include>org.komamitsu.**</include>
+                  </includes>
+                </relocation>
+                <relocation>
+                  <pattern>org.slf4j</pattern>
+                  <shadedPattern>org.shaded.slf4j</shadedPattern>
+                  <includes>
+                    <include>org.slf4j.**</include>
+                  </includes>
+                </relocation>
+                <relocation>
+                  <pattern>org.msgpack</pattern>
+                  <shadedPattern>org.shaded.msgpack</shadedPattern>
+                  <includes>
+                    <include>org.msgpack.**</include>
+                  </includes>
+                </relocation>
+                <relocation>
+                  <pattern>com.fasterxml</pattern>
+                  <shadedPattern>com.shaded.fasterxml</shadedPattern>
+                  <includes>
+                    <include>com.fasterxml.**</include>
+                  </includes>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
