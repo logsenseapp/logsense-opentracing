@@ -4,6 +4,7 @@ import io.opentracing.*;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
 import io.opentracing.util.ThreadLocalScopeManager;
+import org.komamitsu.fluency.EventTime;
 import org.komamitsu.fluency.Fluency;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ public class LogSenseTracer implements Tracer {
     static final String FIELD_NAME_TRACE_ID = PREFIX_TRACER_STATE + "traceid";
     static final String FIELD_NAME_SPAN_ID = PREFIX_TRACER_STATE + "spanid";
     static final String FIELD_NAME_SAMPLED = PREFIX_TRACER_STATE + "sampled";
+
 
     private ScopeManager scopeManager = new ThreadLocalScopeManager();
 
@@ -73,35 +75,46 @@ public class LogSenseTracer implements Tracer {
 
     void addSpan(LogSenseSpanModel spanModel) {
         if (enabled) {
-            emitter.emit(spanModel.asMap());
+            emitter.emit(spanModel.getStartTimeStamp(), spanModel.asMap());
         }
     }
 
 
+    private static class FluentDataFacade {
+        private static final String LOGSENSE_TOKEN_KEY = "cs_customer_token";
+
+        FluentDataFacade(long timestampMicros, String customerToken, Map<String,Object> data) {
+            Map<String, Object> allData = new HashMap<>(data);
+            allData.put(LOGSENSE_TOKEN_KEY, customerToken);
+            this.data = allData;
+            this.timestampMicros = timestampMicros;
+        }
+
+        final long timestampMicros;
+        final Map<String,Object> data;
+    }
+
     private class FluentEmitter implements Runnable {
         private static final int SLEEP_MILLIS = 500;
 
-        private String customer_token;
+        private String logsense_token;
         private String host;
         private int port;
 
         private Fluency fluency;
-        private List<Map<String,Object>> buffer;
+        private List<FluentDataFacade> buffer;
         private boolean connected = false;
 
         public FluentEmitter(String token, String host, int port) {
-            this.customer_token = token;
+            this.logsense_token = token;
             this.host = host;
             this.port = port;
             this.buffer = new ArrayList<>();
         }
 
-        public void emit(Map<String,Object> data) {
-            HashMap<String,Object> allData = new HashMap<>(data);
-            allData.put("cs_customer_token", customer_token);
-
+        public void emit(final long timestamp, final Map<String,Object> data) {
             synchronized (buffer) {
-                buffer.add(allData);
+                buffer.add(new FluentDataFacade(timestamp, logsense_token, data));
             }
         }
 
@@ -134,7 +147,7 @@ public class LogSenseTracer implements Tracer {
 
                     connect();
 
-                    List<Map<String,Object>> bufferCopy = new ArrayList<>();
+                    List<FluentDataFacade> bufferCopy = new ArrayList<>();
                     synchronized (buffer) {
                         if (!buffer.isEmpty()) {
                             bufferCopy.addAll(buffer);
@@ -143,9 +156,12 @@ public class LogSenseTracer implements Tracer {
                     }
 
                     IOException lastException = null;
-                    for (Map<String,Object> event : bufferCopy) {
+                    for (FluentDataFacade event : bufferCopy) {
                         try {
-                            fluency.emit("ot", event);
+                            int timestampSeconds = (int) (event.timestampMicros/1000000L);
+                            int timestampMicrosecondRemainder = (int) (event.timestampMicros%1000000);
+                            EventTime time = new EventTime(timestampSeconds, timestampMicrosecondRemainder*1000);
+                            fluency.emit("ot", time, event.data);
                         } catch (IOException ioe) {
                             lastException = ioe;
                             connected = false;
@@ -227,7 +243,6 @@ public class LogSenseTracer implements Tracer {
             return null;
         }
 
-        // Success.
         return new LogSenseSpanContext(traceId, spanId, baggage);
     }
 
