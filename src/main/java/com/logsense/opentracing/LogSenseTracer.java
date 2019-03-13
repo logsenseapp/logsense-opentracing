@@ -9,12 +9,10 @@ import org.komamitsu.fluency.Fluency;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 
 
 public class LogSenseTracer implements Tracer {
@@ -40,16 +38,16 @@ public class LogSenseTracer implements Tracer {
 
     public LogSenseTracer(String customerToken) {
         Properties prop = new Properties();
-        prop.setProperty(LogSenseConfig.CUSTOMER_TOKEN, customerToken);
+        prop.setProperty(LogSenseConfig.CUSTOMER_TOKEN.getPropertyName(), customerToken);
         config = LogSenseConfig.get(prop);
         prepareFluentEmitter();
     }
 
     public LogSenseTracer(String customerToken, String host, int port) {
         Properties prop = new Properties();
-        prop.setProperty(LogSenseConfig.CUSTOMER_TOKEN, customerToken);
-        prop.setProperty(LogSenseConfig.HOST, host);
-        prop.setProperty(LogSenseConfig.PORT, Integer.toString(port));
+        prop.setProperty(LogSenseConfig.CUSTOMER_TOKEN.getPropertyName(), customerToken);
+        prop.setProperty(LogSenseConfig.HOST.getPropertyName(), host);
+        prop.setProperty(LogSenseConfig.PORT.getPropertyName(), Integer.toString(port));
         config = LogSenseConfig.get(prop);
         prepareFluentEmitter();
     }
@@ -58,7 +56,7 @@ public class LogSenseTracer implements Tracer {
         if (config.getCustomerToken() != null && !config.getCustomerToken().isEmpty()) {
             this.enabled = true;
         } else {
-            System.err.println("Disabling LogSense Tracer as no "+LogSenseConfig.CUSTOMER_TOKEN+" env variable is provided");
+            System.err.println("Disabling LogSense Tracer as no "+LogSenseConfig.CUSTOMER_TOKEN.toString() + " is provided");
             return;
         }
 
