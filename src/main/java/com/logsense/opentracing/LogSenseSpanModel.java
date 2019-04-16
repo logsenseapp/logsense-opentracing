@@ -13,6 +13,8 @@ public class LogSenseSpanModel {
     private Long parentSpanId;
     private Long followSpanId;
 
+    private final static String PREFIX="ot.";
+
     private Map<String,Object> tagValues = new HashMap<>();
 
     public Map<String, Object> getTagValues() {
@@ -86,28 +88,30 @@ public class LogSenseSpanModel {
     public Map<String,Object> asMap() {
         HashMap<String,Object> out = new HashMap<>();
 
+        out.put("_type", "trace");
+
         Iterator<Map.Entry<String, String>> it = getSpanContext().baggageItems().iterator();
         while (it.hasNext()) {
             Map.Entry<String, String> entry = it.next();
             if (entry.getKey() != null && !entry.getKey().trim().isEmpty())
-                out.put(entry.getKey(), entry.getValue());
+                out.put(PREFIX+entry.getKey(), entry.getValue());
         }
 
         for (Map.Entry<String, Object> entry : getTagValues().entrySet()) {
             if (entry.getKey() != null && !entry.getKey().trim().isEmpty())
-                out.put(entry.getKey(), entry.getValue());
+                out.put(PREFIX+entry.getKey(), entry.getValue());
         }
 
-        out.put("operation_name", getOperationName());
-        out.put("duration_us", getDurationMicros());
-        out.put("trace_id", getSpanContext().getTraceId());
-        out.put("span_id", getSpanContext().getSpanId());
+        out.put(PREFIX+"operation_name", getOperationName());
+        out.put(PREFIX+"duration_us", getDurationMicros());
+        out.put(PREFIX+"trace_id", getSpanContext().getTraceId());
+        out.put(PREFIX+"span_id", getSpanContext().getSpanId());
 
         if (parentSpanId != null) {
-            out.put("parent_span_id", parentSpanId);
+            out.put(PREFIX+"parent_span_id", parentSpanId);
         }
         if (followSpanId != null) {
-            out.put("follow_span_id", followSpanId);
+            out.put(PREFIX+"follow_span_id", followSpanId);
         }
 
         return out;

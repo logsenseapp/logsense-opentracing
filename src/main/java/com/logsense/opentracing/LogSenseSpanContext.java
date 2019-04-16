@@ -8,6 +8,7 @@ import java.util.Random;
 public class LogSenseSpanContext implements io.opentracing.SpanContext {
     private final long traceId;
     private final long spanId;
+    private boolean sampledOut = false;
     private final Map<String, String> baggage;
 
     private static Random random;
@@ -56,6 +57,19 @@ public class LogSenseSpanContext implements io.opentracing.SpanContext {
         return this.traceId;
     }
 
+    @Override
+    public String toTraceId() {
+        return Long.toString(this.traceId);
+    }
+
+    @Override
+    public String toSpanId() {
+        return Long.toString(this.spanId);
+    }
+
+    public boolean isSampledOut() {
+        return sampledOut;
+    }
 
     String getBaggageItem(String key) {
         return this.baggage.get(key);

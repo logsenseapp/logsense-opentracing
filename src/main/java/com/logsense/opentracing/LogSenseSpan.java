@@ -2,6 +2,7 @@ package com.logsense.opentracing;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import io.opentracing.tag.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -78,6 +79,21 @@ public class LogSenseSpan implements Span {
                 this.model.setTagValue(key, value.toString());
             }
         }
+        return this;
+    }
+
+    @Override
+    public <T> Span setTag(Tag<T> tag, T value) {
+        if (tag != null && tag.getKey() != null && value != null) {
+            if (value instanceof Number) {
+                return setTag(tag.getKey(), (Number) value);
+            } else if (value instanceof Boolean) {
+                return setTag(tag.getKey(), (Boolean) value);
+            } else {
+                return setTag(tag.getKey(), value.toString());
+            }
+        }
+        // FIXME This should clear out the key...
         return this;
     }
 

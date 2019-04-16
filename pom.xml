@@ -6,7 +6,7 @@
 
   <groupId>com.logsense</groupId>
   <artifactId>logsense-opentracing</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.1</version>
   <packaging>jar</packaging>
 
   <name>logsense-opentracing</name>
@@ -14,9 +14,9 @@
   <url>http://logsense.com</url>
 
   <properties>
-    <opentracing.version>0.31.0</opentracing.version>
-    <tracerresolver.version>0.1.5</tracerresolver.version>
-    <fluency.version>1.8.1</fluency.version>
+    <opentracing.version>0.32.0</opentracing.version>
+    <tracerresolver.version>0.1.6</tracerresolver.version>
+    <fluency.version>2.2.1</fluency.version>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -59,7 +59,12 @@
   <dependencies>
     <dependency>
       <groupId>org.komamitsu</groupId>
-      <artifactId>fluency</artifactId>
+      <artifactId>fluency-core</artifactId>
+      <version>${fluency.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.komamitsu</groupId>
+      <artifactId>fluency-fluentd</artifactId>
       <version>${fluency.version}</version>
     </dependency>
     <dependency>
@@ -67,6 +72,11 @@
       <artifactId>opentracing-api</artifactId>
       <version>${opentracing.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-nop</artifactId>
+      <version>1.7.25</version>
     </dependency>
     <dependency>
       <groupId>io.opentracing</groupId>
@@ -93,6 +103,14 @@
       <optional>true</optional>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>

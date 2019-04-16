@@ -3,20 +3,20 @@ package com.logsense.opentracing;
 import io.opentracing.*;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
+import io.opentracing.util.GlobalTracer;
 import io.opentracing.util.ThreadLocalScopeManager;
 import org.komamitsu.fluency.EventTime;
 import org.komamitsu.fluency.Fluency;
+import org.komamitsu.fluency.fluentd.FluencyBuilderForFluentd;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
-public class LogSenseTracer implements Tracer {
+public class LogSenseTracer implements Tracer, Closeable {
     private static final Locale english = new Locale("en", "US");
     private static final String PREFIX_TRACER_STATE = "ot-tracer-";
     static final String PREFIX_BAGGAGE = "ot-baggage-";
@@ -24,6 +24,8 @@ public class LogSenseTracer implements Tracer {
     static final String FIELD_NAME_SPAN_ID = PREFIX_TRACER_STATE + "spanid";
     static final String FIELD_NAME_SAMPLED = PREFIX_TRACER_STATE + "sampled";
 
+
+    public static final Logger logger = Logger.getLogger(LogSenseTracer.class.getName());
 
     private ScopeManager scopeManager = new ThreadLocalScopeManager();
 
@@ -56,13 +58,21 @@ public class LogSenseTracer implements Tracer {
 
     private void prepareFluentEmitter() {
         if (config.getCustomerToken() != null && !config.getCustomerToken().isEmpty()) {
+            logger.info("Enabling LogSense Tracer");
             this.enabled = true;
         } else {
-            System.err.println("Disabling LogSense Tracer as no "+LogSenseConfig.CUSTOMER_TOKEN.toString() + " is provided");
+            logger.info("Disabling LogSense Tracer as no "+LogSenseConfig.CUSTOMER_TOKEN.toString() + " is provided");
             return;
         }
 
         emitter = new FluentEmitter(config.getCustomerToken(), config.getHost(), config.getPort());
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                LogSenseTracer.this.close();
+            }
+        });
 
         emitterThread = new Thread(emitter);
         emitterThread.setDaemon(true);
@@ -78,7 +88,6 @@ public class LogSenseTracer implements Tracer {
             emitter.emit(spanModel.getStartTimeStamp(), spanModel.asMap());
         }
     }
-
 
     private static class FluentDataFacade {
         private static final String LOGSENSE_TOKEN_KEY = "cs_customer_token";
@@ -104,15 +113,21 @@ public class LogSenseTracer implements Tracer {
         private Fluency fluency;
         private List<FluentDataFacade> buffer;
         private boolean connected = false;
+        private boolean stopped = false;
 
         public FluentEmitter(String token, String host, int port) {
             this.logsense_token = token;
             this.host = host;
             this.port = port;
             this.buffer = new ArrayList<>();
+
         }
 
         public void emit(final long timestamp, final Map<String,Object> data) {
+            if (logger.isLoggable(Level.FINER)) {
+                logger.finer("Emitting data package: "+Arrays.toString(data.entrySet().toArray()));
+            }
+
             synchronized (buffer) {
                 buffer.add(new FluentDataFacade(timestamp, logsense_token, data));
             }
@@ -122,13 +137,18 @@ public class LogSenseTracer implements Tracer {
             if (connected)
                 return;
 
-            Fluency.Config config = new Fluency.Config();
-            config.setSslEnabled(true);
-            this.fluency = Fluency.defaultFluency(this.host, this.port, config);
+            FluencyBuilderForFluentd builder = new FluencyBuilderForFluentd();
+            builder.setSslEnabled(true);
+            this.fluency = builder.build(this.host, this.port);
+            logger.info("LogSense tracing connected to "+this.host+":"+this.port);
             connected = true;
         }
 
+
         public void stop() {
+            logger.info("LogSense tracing emitter is being stopped");
+
+            this.stopped = true;
             if (fluency != null) {
                 try {
                     fluency.close();
@@ -141,7 +161,7 @@ public class LogSenseTracer implements Tracer {
 
         @Override
         public void run() {
-            while (!Thread.interrupted()) {
+            while (!Thread.interrupted() && !stopped) {
                 try {
                     Thread.sleep(SLEEP_MILLIS);
 
@@ -192,6 +212,17 @@ public class LogSenseTracer implements Tracer {
         return scope == null ? null : scope.span();
     }
 
+
+    @Override
+    public Scope activateSpan(Span span) {
+        return scopeManager().activate(span);
+    }
+
+    @Override
+    public void close() {
+        emitter.stop();
+    }
+
     @Override
     public SpanBuilder buildSpan(String operationName) {
         return new LogSenseSpanBuilder(operationName, this);
@@ -200,7 +231,7 @@ public class LogSenseTracer implements Tracer {
     @Override
     public <C> void inject(SpanContext spanContext, Format<C> format, C carrier) {
         if ( !(spanContext instanceof LogSenseSpanContext) ) {
-            System.err.println("Unsupported SpanContext implementation: " + spanContext.getClass());
+            logger.severe("Unsupported SpanContext implementation: " + spanContext.getClass());
             return;
         }
         LogSenseSpanContext logSenseSpanContext = (LogSenseSpanContext) spanContext;

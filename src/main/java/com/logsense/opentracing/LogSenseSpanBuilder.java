@@ -3,6 +3,7 @@ package com.logsense.opentracing;
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopSpan;
+import io.opentracing.tag.Tag;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,6 +79,21 @@ public class LogSenseSpanBuilder implements Tracer.SpanBuilder {
 
     public Tracer.SpanBuilder withTag(String key, Number value) {
         numTags.put(key, value);
+        return this;
+    }
+
+    @Override
+    public <T> Tracer.SpanBuilder withTag(Tag<T> tag, T t) {
+        if (tag != null && tag.getKey() != null && t != null) {
+            if (t instanceof Number) {
+                numTags.put(tag.getKey(), (Number) t);
+            } else if (t instanceof Boolean) {
+                boolTags.put(tag.getKey(), (Boolean) t);
+            } else {
+                stringTags.put(tag.getKey(), t.toString());
+            }
+        }
+        // FIXME This should clear out the key if t is null...
         return this;
     }
 
