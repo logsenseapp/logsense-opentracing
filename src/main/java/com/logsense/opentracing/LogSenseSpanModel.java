@@ -11,7 +11,7 @@ public class LogSenseSpanModel {
     private LogSenseSpanContext spanContext;
 
     private Long parentSpanId;
-    private Long followSpanId;
+    private Long followFromSpanId;
 
     private final static String PREFIX="ot.";
 
@@ -57,12 +57,12 @@ public class LogSenseSpanModel {
         return parentSpanId;
     }
 
-    public void setFollowSpanId(Long followSpanId) {
-        this.followSpanId = followSpanId;
+    public void setFollowFromSpanId(Long followSpanId) {
+        this.followFromSpanId = followSpanId;
     }
 
-    public Long getFollowSpanId() {
-        return followSpanId;
+    public Long getFollowFromSpanId() {
+        return followFromSpanId;
     }
 
     public void setDurationMicros(long durationMicros) {
@@ -110,8 +110,8 @@ public class LogSenseSpanModel {
         if (parentSpanId != null) {
             out.put(PREFIX+"parent_span_id", parentSpanId);
         }
-        if (followSpanId != null) {
-            out.put(PREFIX+"follow_span_id", followSpanId);
+        if (followFromSpanId != null) {
+            out.put(PREFIX+"follow_from_span_id", followFromSpanId);
         }
 
         return out;

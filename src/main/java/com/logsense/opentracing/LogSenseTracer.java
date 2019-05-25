@@ -3,11 +3,9 @@ package com.logsense.opentracing;
 import io.opentracing.*;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
-import io.opentracing.util.GlobalTracer;
 import io.opentracing.util.ThreadLocalScopeManager;
 import org.komamitsu.fluency.EventTime;
 import org.komamitsu.fluency.Fluency;
-import org.komamitsu.fluency.fluentd.FluencyBuilderForFluentd;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -137,8 +135,7 @@ public class LogSenseTracer implements Tracer, Closeable {
             if (connected)
                 return;
 
-            FluencyBuilderForFluentd builder = new FluencyBuilderForFluentd();
-            builder.setSslEnabled(true);
+            LogSenseFluencyBuilder builder = new LogSenseFluencyBuilder();
             this.fluency = builder.build(this.host, this.port);
             logger.info("LogSense tracing connected to "+this.host+":"+this.port);
             connected = true;

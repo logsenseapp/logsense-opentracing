@@ -198,7 +198,7 @@ public class LogSenseSpanBuilder implements Tracer.SpanBuilder {
                 model.setParentSpanId(x);
             } else if (FOLLOWS_FROM.equals(type)) {
                 // Can there be more than one?
-                model.setFollowSpanId(x);
+                model.setFollowFromSpanId(x);
             }
         }
         return span;
