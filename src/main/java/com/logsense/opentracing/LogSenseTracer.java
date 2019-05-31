@@ -9,6 +9,8 @@ import org.komamitsu.fluency.Fluency;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,7 +65,7 @@ public class LogSenseTracer implements Tracer, Closeable {
             return;
         }
 
-        emitter = new FluentEmitter(config.getCustomerToken(), config.getHost(), config.getPort());
+        emitter = new FluentEmitter(config.getCustomerToken(), config.getHost(), config.getPort(), config.getServiceName());
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -89,10 +91,18 @@ public class LogSenseTracer implements Tracer, Closeable {
 
     private static class FluentDataFacade {
         private static final String LOGSENSE_TOKEN_KEY = "cs_customer_token";
+        private static final String LOGSENSE_SERVICENAME_KEY = "ot.service.name";
+        private static final String LOGSENSE_HOSTNAME_KEY = "ot.service.host";
 
-        FluentDataFacade(long timestampMicros, String customerToken, Map<String,Object> data) {
+        FluentDataFacade(long timestampMicros, String customerToken, String serviceName, String hostName, Map<String,Object> data) {
             Map<String, Object> allData = new HashMap<>(data);
             allData.put(LOGSENSE_TOKEN_KEY, customerToken);
+            if (serviceName != null && !serviceName.isEmpty()) {
+                allData.put(LOGSENSE_SERVICENAME_KEY, serviceName);
+            }
+            if (hostName != null && !hostName.isEmpty()) {
+                allData.put(LOGSENSE_HOSTNAME_KEY, hostName);
+            }
             this.data = allData;
             this.timestampMicros = timestampMicros;
         }
@@ -107,18 +117,26 @@ public class LogSenseTracer implements Tracer, Closeable {
         private String logsense_token;
         private String host;
         private int port;
+        private String serviceName;
+        private String hostName;
 
         private Fluency fluency;
         private List<FluentDataFacade> buffer;
         private boolean connected = false;
         private boolean stopped = false;
 
-        public FluentEmitter(String token, String host, int port) {
+        public FluentEmitter(String token, String host, int port, String serviceName) {
             this.logsense_token = token;
             this.host = host;
             this.port = port;
             this.buffer = new ArrayList<>();
+            this.serviceName = serviceName;
 
+            try {
+                this.hostName = InetAddress.getLocalHost().getHostName();
+            } catch (UnknownHostException e) {
+                this.hostName = null;
+            }
         }
 
         public void emit(final long timestamp, final Map<String,Object> data) {
@@ -127,7 +145,7 @@ public class LogSenseTracer implements Tracer, Closeable {
             }
 
             synchronized (buffer) {
-                buffer.add(new FluentDataFacade(timestamp, logsense_token, data));
+                buffer.add(new FluentDataFacade(timestamp, logsense_token, serviceName, hostName, data));
             }
         }
 

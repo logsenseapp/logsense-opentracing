@@ -86,11 +86,13 @@ public class LogSenseConfig {
     public static final Property CUSTOMER_TOKEN = new Property("logsense.token", "LOGSENSE_TOKEN", "");
     public static final Property HOST = new Property("logsense.host", "LOGSENSE_HOST", "logs.logsense.com");
     public static final Property PORT = new Property("logsense.port", "LOGSENSE_PORT", "32714");
+    public static final Property SERVICE_NAME = new Property("logsense.service.name", "LOGSENSE_SERVICE_NAME", "");
     public static final Property CONFIG_FILE = new Property("logsense.config", null, null);
 
 
     private String customerToken;
     private String host;
+    private String serviceName;
     private int port;
 
     private static final LogSenseConfig INSTANCE = new LogSenseConfig();
@@ -101,6 +103,7 @@ public class LogSenseConfig {
         customerToken = CUSTOMER_TOKEN.getPropertyValue(System.getProperties());
         host = HOST.getPropertyValue(System.getProperties());
         port = PORT.getIntegerValue(System.getProperties());
+        serviceName = SERVICE_NAME.getPropertyValue(System.getProperties());
 
         String config_file = CONFIG_FILE.getPropertyValue(System.getProperties());
         if (config_file != null && !config_file.isEmpty()) {
@@ -119,6 +122,8 @@ public class LogSenseConfig {
         customerToken = CUSTOMER_TOKEN.getPropertyValue(prop, parent.getCustomerToken());
         host = HOST.getPropertyValue(prop, parent.getHost());
         port = PORT.getIntegerValue(prop, parent.getPort());
+        serviceName = SERVICE_NAME.getPropertyValue(prop, parent.getServiceName());
+
 
         checkEnabled();
     }
@@ -159,6 +164,10 @@ public class LogSenseConfig {
 
     public String getHost() {
         return host;
+    }
+
+    public String getServiceName() {
+        return serviceName;
     }
 
     private Properties attemptLoadingPropertyFile(String path) {

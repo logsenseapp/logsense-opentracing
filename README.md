@@ -17,3 +17,12 @@ $ cat logsense.properties
 logsense.token=aaa-123-bbb-999
 $ java -Dlogsense.config=logsense.properties -javaagent:...
 ```
+
+##Parameters
+
+| Name         | Required  | Runtime property                | Environment variable               | Default value        | 
+|-----------------|---|--------------------------------------|------------------------------------|----------------------|
+| LogSense token  | Y | `-Dlogsense.token=aa-1213-bb...`     | `LOGSENSE_TOKEN=aa-1213-bb...`     |                      | 
+| LogSense host   | N | `-Dlogsense.host=logs.logsense.com`  | `LOGSENSE_HOST=logs.logsense.com`  | `logs.logsense.com`  |
+| LogSense port   | N | `-Dlogsense.port=32714`              | `LOGSENSE_PORT=32714`              |  `32714`             |
+| Service name    | N | `-Dlogsense.service.name=foo`        | `LOGSENSE_SERVICE_NAME=foo`        |  ``                  |
